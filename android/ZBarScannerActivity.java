@@ -2,6 +2,7 @@ package org.cloudsky.cordovaPlugins;
 
 import java.io.IOException;
 import java.lang.RuntimeException;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,6 +24,8 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -30,12 +33,7 @@ import android.widget.TextView;
 import android.content.pm.PackageManager;
 import android.view.Surface;
 
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
 
 import net.sourceforge.zbar.ImageScanner;
 import net.sourceforge.zbar.Image;
@@ -58,6 +56,7 @@ implements SurfaceHolder.Callback {
     public static final String EXTRA_QRVALUE = "qrValue";
     public static final String EXTRA_PARAMS = "params";
     public static final int RESULT_ERROR = RESULT_FIRST_USER + 1;
+    public static final int PHOTO_REQUEST_GALLERY = 3;
     private static final int CAMERA_PERMISSION_REQUEST = 1;
     // State -----------------------------------------------------------
 
@@ -76,6 +75,7 @@ implements SurfaceHolder.Callback {
     // (we can't use actual.application.package.R.* in our code as we
     // don't know the applciation package name when writing this plugin).
     private String package_name;
+    private String photo_path;
     private Resources resources;
 
     // Static initialisers (class) -------------------------------------
@@ -93,7 +93,7 @@ implements SurfaceHolder.Callback {
 
         int permissionCheck = ContextCompat.checkSelfPermission(this.getBaseContext(), Manifest.permission.CAMERA);
 
-        if(permissionCheck == PackageManager.PERMISSION_GRANTED){
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
 
             setUpCamera();
 
@@ -103,10 +103,10 @@ implements SurfaceHolder.Callback {
                     new String[]{Manifest.permission.CAMERA},
                     CAMERA_PERMISSION_REQUEST);
         }
+
         super.onCreate(savedInstanceState);
-
-
     }
+
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
@@ -158,12 +158,25 @@ implements SurfaceHolder.Callback {
             // Update view with customisable strings
             TextView view_textTitle = (TextView) findViewById(getResourceId("id/csZbarScannerTitle"));
             TextView view_textInstructions = (TextView) findViewById(getResourceId("id/csZbarScannerInstructions"));
+
             view_textTitle.setText(textTitle);
             view_textInstructions.setText(textInstructions);
 
             // Draw/hide the sight
             if(!drawSight) {
                 findViewById(getResourceId("id/csZbarScannerSight")).setVisibility(View.INVISIBLE);
+            }else{//add sight animation
+                TranslateAnimation translateAnimation = new TranslateAnimation(
+                        Animation.RELATIVE_TO_SELF,0,
+                        Animation.RELATIVE_TO_SELF,0,
+                        Animation.RELATIVE_TO_SELF,0,
+                        Animation.RELATIVE_TO_SELF,150
+                );
+                translateAnimation.setDuration(5000);
+                translateAnimation.setFillAfter(true);
+                translateAnimation.setRepeatMode(Animation.RESTART);
+                translateAnimation.setRepeatCount(Animation.INFINITE);
+                findViewById(getResourceId("id/csZbarScannerSight")).startAnimation(translateAnimation);
             }
 
             // Create preview SurfaceView
@@ -199,7 +212,6 @@ implements SurfaceHolder.Callback {
     public void onResume ()
     {
         super.onResume();
-
         try {
             if(whichCamera.equals("front")) {
                 int numCams = Camera.getNumberOfCameras();
@@ -223,6 +235,7 @@ implements SurfaceHolder.Callback {
             return;
         }
     }
+
     private void setCameraDisplayOrientation(Activity activity ,int cameraId) {
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
@@ -332,6 +345,30 @@ implements SurfaceHolder.Callback {
         tryStartPreview();
 
     }
+
+    public void toggleBtnBack(View view){
+        onBackPressed();
+    }
+    public void toggleBtnGetImage(View view){
+        setResult(PHOTO_REQUEST_GALLERY);
+        super.onBackPressed();
+//        Intent innerIntent = new Intent(Intent.ACTION_GET_CONTENT) ; //"android.intent.action.GET_CONTENT"
+//        innerIntent.setType( "image/*"); //查看类型 String IMAGE_UNSPECIFIED = "image/*";
+//        innerIntent.addCategory(Intent. CATEGORY_OPENABLE );
+//        startActivityForResult(Intent. createChooser(innerIntent, null) , PHOTO_REQUEST_GALLERY);
+    }
+
+    /*@Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        if (requestCode == PHOTO_REQUEST_GALLERY) {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri intentData = data.getData();
+                System.out.println(intentData.toString());
+            }else if(resultCode != Activity.RESULT_CANCELED){
+                die("Error To Open Image File");
+            }
+        }
+    }*/
 
     public void toggleFlash(View view) {
 		camera.startPreview();

@@ -1,6 +1,10 @@
-**This repository is looking for a maintainer! If you believe you are the right person, please [leave a comment](https://github.com/tjwoon/csZBar/issues/60)!**
+# This Fork Changed Android Part 
+Add function to open a existing picture from album and scan it;
+Add back button and changed UI;
 
-
+How to use?
+Install cordova-plugin-cszbar first;
+Clone this fork and replace this plugin (Android Part Only);
 
 # ZBar Barcode Scanner Plugin
 

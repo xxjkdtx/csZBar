@@ -9,14 +9,30 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.Context;
+import android.content.ContentResolver;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import android.net.Uri;
+
+import net.sourceforge.zbar.Config;
+import net.sourceforge.zbar.Image;
+import net.sourceforge.zbar.ImageScanner;
+import net.sourceforge.zbar.Symbol;
+import net.sourceforge.zbar.SymbolSet;
 
 import org.cloudsky.cordovaPlugins.ZBarScannerActivity;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.Collection;
 
 public class ZBar extends CordovaPlugin {
 
     // Configuration ---------------------------------------------------
 
     private static int SCAN_CODE = 1;
+    private static  int PHOTO_SELECT = 2;
 
 
     // State -----------------------------------------------------------
@@ -45,7 +61,7 @@ public class ZBar extends CordovaPlugin {
                 cordova.startActivityForResult(this, scanIntent, SCAN_CODE);
             }
             return true;
-        } else {
+        }else{
             return false;
         }
     }
@@ -57,6 +73,7 @@ public class ZBar extends CordovaPlugin {
     public void onActivityResult (int requestCode, int resultCode, Intent result)
     {
         if(requestCode == SCAN_CODE) {
+            boolean libraryFLAG = false;
             switch(resultCode) {
                 case Activity.RESULT_OK:
                     String barcodeValue = result.getStringExtra(ZBarScannerActivity.EXTRA_QRVALUE);
@@ -68,11 +85,94 @@ public class ZBar extends CordovaPlugin {
                 case ZBarScannerActivity.RESULT_ERROR:
                     scanCallbackContext.error("Scan failed due to an error");
                     break;
+                case ZBarScannerActivity.PHOTO_REQUEST_GALLERY:
+                    Intent innerIntent = new Intent(Intent.ACTION_GET_CONTENT) ; //"android.intent.action.GET_CONTENT"
+                    innerIntent.setType( "image/*"); //查看类型 String IMAGE_UNSPECIFIED = "image/*";
+                    innerIntent.addCategory(Intent. CATEGORY_OPENABLE );
+                    cordova.startActivityForResult(this,Intent. createChooser(innerIntent, null) , PHOTO_SELECT);
+                    libraryFLAG=true;
+                    break;
                 default:
                     scanCallbackContext.error("Unknown error");
+            }
+            if(!libraryFLAG){
+                isInProgress = false;
+                scanCallbackContext = null;
+            }
+        }else if (requestCode == PHOTO_SELECT) {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri intentData = result.getData();
+                Image image = getImgFormLibrary(intentData);
+                String scanedText = new String();
+                if(image==null){
+                    scanCallbackContext.error("Scan failed due to an error");
+                }else {
+                    scanedText = scanLibImg(image);
+                    if(scanedText == null){
+                        scanCallbackContext.error("Scan failed due to an error");
+                    }else{
+                        scanCallbackContext.success(scanedText);
+                    }
+                }
+            }else if(resultCode == Activity.RESULT_CANCELED){
+                scanCallbackContext.error("cancelled");
+            }else{
+                scanCallbackContext.error("Scan failed due to an error");
             }
             isInProgress = false;
             scanCallbackContext = null;
         }
     }
+
+    private Image getImgFormLibrary(Uri uri){//获取图像文件,并转成Image格式
+        ContentResolver cr = this.cordova.getActivity().getContentResolver();
+        try {
+            InputStream inStream = cr.openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len = -1;
+            while((len = inStream.read(buffer)) != -1){
+                outStream.write(buffer, 0, len);
+            }
+
+            Image barcode = new Image(bitmap.getWidth(), bitmap.getHeight(), "Y800");
+            barcode.setData(outStream.toByteArray());
+            outStream.close();
+            inStream.close();
+            return barcode;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String scanLibImg(Image image){
+        //set Scanner
+        ImageScanner scanner = new ImageScanner();
+        scanner.setConfig(0, Config.X_DENSITY, 3);
+        scanner.setConfig(0, Config.Y_DENSITY, 3);
+
+        // Set the config for barcode formats
+        for(ZBarcodeFormat format : getFormats()) {
+            scanner.setConfig(format.getId(), Config.ENABLE, 1);
+        }
+
+        if (scanner.scanImage(image) != 0) {
+            String qrValue = "";
+
+            SymbolSet syms = scanner.getResults();
+            for (Symbol sym : syms) {
+                qrValue = sym.getData();
+            }
+            return qrValue;
+        }else{
+            return null;
+        }
+    }
+
+    private Collection<ZBarcodeFormat> getFormats() {
+        return ZBarcodeFormat.ALL_FORMATS;
+    }
 }
+
+
