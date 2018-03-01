@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import android.net.Uri;
+import android.provider.MediaStore;
 
 import net.sourceforge.zbar.Config;
 import net.sourceforge.zbar.Image;
@@ -25,6 +26,8 @@ import org.cloudsky.cordovaPlugins.ZBarScannerActivity;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 
 public class ZBar extends CordovaPlugin {
@@ -103,13 +106,13 @@ public class ZBar extends CordovaPlugin {
             if (resultCode == Activity.RESULT_OK) {
                 Uri intentData = result.getData();
                 Image image = getImgFormLibrary(intentData);
-                String scanedText = new String();
+                String scanedText = scanLibImg(image);
                 if(image==null){
-                    scanCallbackContext.error("Scan failed due to an error");
+                    scanCallbackContext.error("无法打开图片");
                 }else {
                     scanedText = scanLibImg(image);
                     if(scanedText == null){
-                        scanCallbackContext.error("Scan failed due to an error");
+                        scanCallbackContext.error("无法识别图片中的二维码");
                     }else{
                         scanCallbackContext.success(scanedText);
                     }
@@ -127,19 +130,12 @@ public class ZBar extends CordovaPlugin {
     private Image getImgFormLibrary(Uri uri){//获取图像文件,并转成Image格式
         ContentResolver cr = this.cordova.getActivity().getContentResolver();
         try {
-            InputStream inStream = cr.openInputStream(uri);
-            Bitmap bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int len = -1;
-            while((len = inStream.read(buffer)) != -1){
-                outStream.write(buffer, 0, len);
-            }
+//            InputStream inStream = cr.openInputStream(uri);
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(cr,uri);
 
-            Image barcode = new Image(bitmap.getWidth(), bitmap.getHeight(), "Y800");
-            barcode.setData(outStream.toByteArray());
-            outStream.close();
-            inStream.close();
+            Image barcode = RBGToYUV.getYUVByBitmap(bitmap);
+//            outStream.close();
+//            inStream.close();
             return barcode;
         } catch (Exception e) {
             return null;
@@ -156,6 +152,7 @@ public class ZBar extends CordovaPlugin {
         for(ZBarcodeFormat format : getFormats()) {
             scanner.setConfig(format.getId(), Config.ENABLE, 1);
         }
+        //scanner.setConfig(ZBarcodeFormat.QRCODE.getId(),Config.ENABLE,1);
 
         if (scanner.scanImage(image) != 0) {
             String qrValue = "";

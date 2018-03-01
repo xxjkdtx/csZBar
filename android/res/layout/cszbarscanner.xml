@@ -71,7 +71,6 @@
                     android:id="@+id/imageButton"
                     android:src="@drawable/btn_gallery"
                     android:background="#00000000"
-                    android:onClick="toggleBtnGetImage"
                     android:longClickable="true"
                     android:visibility="visible"
                     android:scaleType="fitCenter"
@@ -79,7 +78,8 @@
                     android:layout_weight="1"
                     android:layout_gravity="left"
                     android:layout_marginLeft="10dp"
-                    android:padding="5dp" />
+                    android:padding="5dp"
+                    android:onClick="toggleBtnGetImage" />
 
                 <TextView android:id="@+id/csZbarScannerInstructions"
                     android:layout_height="match_parent"
