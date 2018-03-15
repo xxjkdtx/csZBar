@@ -1,12 +1,12 @@
 # This Fork Changed Android Part 
-Add function to open a existing picture from album and scan it;
-Add back button and changed UI;
-Changed success callback return param. Now it's a Object,include value and format;
-Add format limit,Now can only scan the bar type that your choose;
-(API changed)
-How to use?
-Install cordova-plugin-cszbar first;
-Clone this fork and replace this plugin (Android Part Only);
+- Add function to open a existing picture from album and scan it;
+- Add back button and changed UI;
+- Changed success callback return param. Now it's a Object,include value and format;
+- Add format limit,Now can only scan the bar type that your choose;
+- (API changed)
+- How to use?
+- 1.Install cordova-plugin-cszbar first;
+- 2.Clone this fork and replace this plugin (Android Part Only);
 
 # ZBar Barcode Scanner Plugin
 
@@ -38,10 +38,24 @@ Arguments:
         format: "QRCODE" //defaults to ALL(No type limit)
     }
     ```
-    formatList:
+    format you can chose:
     ALL(No type limit,Default Value);
-    PARTIAL;EAN8;UPCE;ISBN10;UPCA;EAN13;ISBN13;I25;DATABAR;DATABAR_EXP;
-    CODABAR;CODE39;PDF417;QRCODE;CODE93;CODE128;
+    PARTIAL;
+    EAN8;
+    PCE;
+    ISBN10;
+    UPCA;
+    EAN13;
+    ISBN13;
+    I25;
+    DATABAR;
+    DATABAR_EXP;
+    CODABAR;
+    CODE39;
+    PDF417;
+    QRCODE;
+    CODE93;
+    CODE128;
 
 - **onSuccess**: function (s) {...} _Callback for successful scan._
 - **onFailure**: function (s) {...} _Callback for cancelled scan or error._
