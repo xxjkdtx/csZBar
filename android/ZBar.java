@@ -79,8 +79,14 @@ public class ZBar extends CordovaPlugin {
             boolean libraryFLAG = false;
             switch(resultCode) {
                 case Activity.RESULT_OK:
-                    String barcodeValue = result.getStringExtra(ZBarScannerActivity.EXTRA_QRVALUE);
-                    scanCallbackContext.success(barcodeValue);
+                    JSONObject callBackObj = new JSONObject();
+                    try {
+                        callBackObj.put("value",result.getStringExtra(ZBarScannerActivity.EXTRA_QRVALUE));
+                        callBackObj.put("format",result.getStringExtra(ZBarScannerActivity.EXTRA_CODEFORMAT));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    scanCallbackContext.success(callBackObj);
                     break;
                 case Activity.RESULT_CANCELED:
                     scanCallbackContext.error("cancelled");
